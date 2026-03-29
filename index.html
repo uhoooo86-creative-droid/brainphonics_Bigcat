@@ -77,6 +77,14 @@
     .vs-card.hit { animation: hitShake .35s ease; }
     .damage-pop { position:absolute; top:18px; right:20px; font-size:32px; font-weight:900; color:#fecaca; text-shadow:0 0 18px rgba(239,68,68,.45); opacity:0; transform:translateY(0); pointer-events:none; }
     .damage-pop.show { animation: damageUp .7s ease; }
+    .projectile-layer { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:5; }
+    .projectile { position:absolute; top:50%; transform:translateY(-50%); font-size:48px; line-height:1; filter: drop-shadow(0 0 16px rgba(255,255,255,.25)); opacity:0; }
+    .projectile.left { left:14%; }
+    .projectile.right { right:14%; }
+    .projectile.fly-left { animation: flyLeft .55s ease-out forwards; }
+    .projectile.fly-right { animation: flyRight .55s ease-out forwards; }
+    .impact-burst { position:absolute; left:50%; top:50%; width:24px; height:24px; border-radius:999px; transform:translate(-50%,-50%) scale(.2); opacity:0; pointer-events:none; z-index:6; background: radial-gradient(circle, rgba(255,245,157,.95) 0%, rgba(251,191,36,.92) 35%, rgba(239,68,68,.85) 70%, rgba(239,68,68,0) 100%); }
+    .impact-burst.show { animation: burst .45s ease-out forwards; }
     .vs-name { margin-top: 10px; font-size:14px; color: var(--muted); }
     .vs-text { text-align:center; font-size: 56px; font-weight: 900; color: #fbbf24; letter-spacing: 2px; text-shadow: 0 0 18px rgba(251,191,36,.25); }
     .turn-chip { display:inline-flex; margin-top:10px; padding:8px 12px; border-radius:999px; background:rgba(56,189,248,.12); border:1px solid rgba(56,189,248,.25); color:#bae6fd; font-size:13px; font-weight:700; }
@@ -104,6 +112,9 @@
     @keyframes rightAttack { 0%{transform:translateX(0)} 50%{transform:translateX(-26px) scale(1.05)} 100%{transform:translateX(0)} }
     @keyframes hitShake { 0%{transform:translateX(0)} 25%{transform:translateX(-8px)} 50%{transform:translateX(8px)} 75%{transform:translateX(-5px)} 100%{transform:translateX(0)} }
     @keyframes damageUp { 0%{opacity:0; transform:translateY(10px)} 20%{opacity:1} 100%{opacity:0; transform:translateY(-34px)} }
+    @keyframes flyLeft { 0%{left:14%; opacity:0; transform:translateY(-50%) scale(.7)} 20%{opacity:1} 100%{left:76%; opacity:1; transform:translateY(-50%) scale(1.12)} }
+    @keyframes flyRight { 0%{right:14%; opacity:0; transform:translateY(-50%) scale(.7)} 20%{opacity:1} 100%{right:76%; opacity:1; transform:translateY(-50%) scale(1.12)} }
+    @keyframes burst { 0%{opacity:0; transform:translate(-50%,-50%) scale(.2)} 35%{opacity:1} 100%{opacity:0; transform:translate(-50%,-50%) scale(5.4)} }
     @media (max-width: 1100px) {
       .layout { grid-template-columns: 1fr; }
       .vs-panel { min-height: auto; }
@@ -168,6 +179,7 @@
             <div class="versus">
               <div class="vs-card" id="vsCard1">
                 <div class="damage-pop" id="damage1">-10</div>
+                <div class="projectile-layer" id="projectileLayer1"></div>
                 <img id="arena1" alt="arena left">
                 <div class="vs-name" id="arenaName1"></div>
                 <div class="turn-chip" id="turnChip1">Ready</div>
@@ -175,6 +187,7 @@
               <div class="vs-text">VS</div>
               <div class="vs-card" id="vsCard2">
                 <div class="damage-pop" id="damage2">-10</div>
+                <div class="projectile-layer" id="projectileLayer2"></div>
                 <img id="arena2" alt="arena right">
                 <div class="vs-name" id="arenaName2"></div>
                 <div class="turn-chip" id="turnChip2">Ready</div>
@@ -286,6 +299,33 @@
     const char1 = $('char1');
     const char2 = $('char2');
     const ASSET_DIR = 'brainrot_sprites';
+
+    const projectileMap = {
+      A: ['🍎','👽'], B: ['🍌','🧔'], C: ['🍪','🤡'], D: ['🍩','🦖'], E: ['🍆','🧝'], F: ['☁️','💨'],
+      G: ['😂','👻'], H: ['🍔','💇'], I: ['🍦','🦎'], J: ['🪼','✨'], K: ['🍅','👑'], L: ['🍭','🦁'],
+      M: ['☁️','👾'], N: ['🍜','👃'], O: ['🍊','🐙'], P: ['🍕','🏴‍☠️'], Q: ['🦆','👑'], R: ['🌈','🤖'],
+      S: ['🌭','🐍'], T: ['🧻','🐯'], U: ['🩲','🦄'], V: ['🧛','🥬'], W: ['🧇','🐋'], X: ['🩻','🎼'],
+      Y: ['🍦','❄️'], Z: ['🧟','🦓']
+    };
+
+    function getProjectileEmoji(character, side = 'left') {
+      const pair = projectileMap[character.id] || ['✨','💥'];
+      return side === 'left' ? pair[0] : pair[1];
+    }
+
+    function spawnProjectile(layerId, side, emoji) {
+      const layer = $(layerId);
+      layer.innerHTML = '';
+      const shot = document.createElement('div');
+      shot.className = `projectile ${side} ${side === 'left' ? 'fly-left' : 'fly-right'}`;
+      shot.textContent = emoji;
+      const burst = document.createElement('div');
+      burst.className = 'impact-burst';
+      layer.appendChild(shot);
+      layer.appendChild(burst);
+      setTimeout(() => burst.classList.add('show'), 370);
+      setTimeout(() => { layer.innerHTML = ''; }, 700);
+    }
 
     function filePath(file) {
       return `${ASSET_DIR}/${file}`;
@@ -415,13 +455,17 @@
       const damageEl = $(isLeft ? 'damage2' : 'damage1');
       const turnSelf = $(isLeft ? 'turnChip1' : 'turnChip2');
       const turnEnemy = $(isLeft ? 'turnChip2' : 'turnChip1');
+      const projectileEmoji = getProjectileEmoji(attacker, isLeft ? 'left' : 'right');
+      const attackerLead = projectileEmoji;
+      const defenderLead = getProjectileEmoji(defender, isLeft ? 'right' : 'left');
 
       turnSelf.textContent = 'ATTACK';
       turnEnemy.textContent = 'DEFEND';
       atkCard.classList.add(isLeft ? 'left-attack' : 'right-attack');
-      setBattleLog(`⚔️ ${attacker.name} → ${defender.name} 공격! 예상 데미지 ${damage}`);
+      spawnProjectile(isLeft ? 'projectileLayer1' : 'projectileLayer2', isLeft ? 'left' : 'right', projectileEmoji);
+      setBattleLog(`⚔️ ${attacker.name} ${attackerLead} 가 ${defender.name} ${defenderLead} 에게 공격! 데미지 ${damage}`);
 
-      await new Promise(r => setTimeout(r, 280));
+      await new Promise(r => setTimeout(r, 420));
       defCard.classList.add('hit');
       damageEl.textContent = `-${damage}`;
       damageEl.classList.remove('show');
@@ -507,6 +551,7 @@
         <strong>${left.name}</strong> vs <strong>${right.name}</strong><br>
         점수: ${state.leftScore} : ${state.rightScore}<br>
         HP: ${state.leftHp} : ${state.rightHp}<br>
+        공격체: ${getProjectileEmoji(left,'left')} vs ${getProjectileEmoji(right,'right')}<br>
         최종 이름: <strong>${fusionNameText(result.winner, result.loser)}</strong>
       `;
 
