@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,6 +16,7 @@
       --accent2: #38bdf8;
       --green: #22c55e;
       --pink: #f472b6;
+      --red: #ef4444;
       --shadow: 0 20px 40px rgba(0,0,0,.28);
     }
     * { box-sizing: border-box; }
@@ -46,7 +47,11 @@
     .sprite-box { height: 260px; display:flex; align-items:center; justify-content:center; background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)); border-radius: 18px; }
     .sprite-box img { max-width: 100%; max-height: 230px; object-fit: contain; filter: drop-shadow(0 14px 20px rgba(0,0,0,.3)); }
     .name { font-size: 24px; font-weight: 700; margin: 12px 0 6px; }
-    .score { font-size: 52px; font-weight: 800; letter-spacing: 1px; margin: 8px 0 14px; }
+    .score { font-size: 52px; font-weight: 800; letter-spacing: 1px; margin: 8px 0 10px; }
+    .hp-wrap { margin: 8px 0 14px; }
+    .hp-label { display:flex; justify-content:space-between; font-size:13px; color:var(--muted); margin-bottom:6px; }
+    .hp-bar-bg { height: 16px; border-radius: 999px; overflow:hidden; background:#0b1220; border:1px solid var(--line); }
+    .hp-bar { height:100%; width:100%; background: linear-gradient(90deg, #22c55e, #eab308, #ef4444); transition: width .25s ease; }
     .btn-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:8px; }
     button {
       cursor: pointer; border: 0; border-radius: 12px; padding: 12px 12px; font-weight: 700; color: white;
@@ -54,18 +59,27 @@
     }
     button:hover { opacity: .96; }
     button:active { transform: scale(.98); }
+    button:disabled { opacity:.45; cursor:not-allowed; }
     .plus { background: linear-gradient(180deg, #2563eb, #1d4ed8); }
     .minus { background: linear-gradient(180deg, #475569, #334155); }
     .random { background: linear-gradient(180deg, #7c3aed, #6d28d9); }
     .reset { background: linear-gradient(180deg, #ef4444, #dc2626); }
+    .battle-btn { background: linear-gradient(180deg, #f59e0b, #d97706); }
     .vs-panel { padding: 18px; min-height: 860px; }
     .top-controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 16px; }
     .top-controls button { padding: 12px 14px; }
     .arena { background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015)); border:1px solid var(--line); border-radius: 26px; padding: 18px; }
     .versus { display:grid; grid-template-columns: 1fr 120px 1fr; align-items:center; gap:12px; }
-    .vs-card { background: #0b1220; border:1px solid var(--line); border-radius:22px; min-height: 310px; padding: 14px; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+    .vs-card { background: #0b1220; border:1px solid var(--line); border-radius:22px; min-height: 310px; padding: 14px; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; overflow:hidden; }
     .vs-card img { max-width:100%; max-height:240px; object-fit:contain; filter: drop-shadow(0 16px 26px rgba(0,0,0,.32)); }
+    .vs-card.left-attack img { animation: leftAttack .45s ease; }
+    .vs-card.right-attack img { animation: rightAttack .45s ease; }
+    .vs-card.hit { animation: hitShake .35s ease; }
+    .damage-pop { position:absolute; top:18px; right:20px; font-size:32px; font-weight:900; color:#fecaca; text-shadow:0 0 18px rgba(239,68,68,.45); opacity:0; transform:translateY(0); pointer-events:none; }
+    .damage-pop.show { animation: damageUp .7s ease; }
+    .vs-name { margin-top: 10px; font-size:14px; color: var(--muted); }
     .vs-text { text-align:center; font-size: 56px; font-weight: 900; color: #fbbf24; letter-spacing: 2px; text-shadow: 0 0 18px rgba(251,191,36,.25); }
+    .turn-chip { display:inline-flex; margin-top:10px; padding:8px 12px; border-radius:999px; background:rgba(56,189,248,.12); border:1px solid rgba(56,189,248,.25); color:#bae6fd; font-size:13px; font-weight:700; }
     .gene-title { margin:18px 0 10px; font-size: 24px; font-weight: 800; }
     .fusion-name { font-size: 36px; font-weight: 900; margin-bottom: 10px; }
     .gene-bar-wrap { background:#0b1220; border:1px solid var(--line); border-radius:999px; overflow:hidden; height:32px; }
@@ -78,12 +92,18 @@
     .fusion-base img, .fusion-overlay img { max-width: 82%; max-height: 290px; object-fit: contain; filter: drop-shadow(0 18px 28px rgba(0,0,0,.35)); }
     .fusion-overlay { opacity: .92; }
     .fusion-caption { position:absolute; left:16px; right:16px; bottom:12px; background: rgba(15,23,42,.75); border:1px solid var(--line); border-radius: 14px; padding: 10px 12px; font-size:14px; color: var(--muted); }
+    .battle-log { margin-top:14px; background:#0b1220; border:1px solid var(--line); border-radius:18px; padding:14px; min-height:88px; }
+    .battle-log strong { color: #fff; }
     .rule-box { margin-top: 16px; display:grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
     .rule { background:#0b1220; border:1px solid var(--line); border-radius:16px; padding: 14px; }
     .rule strong { display:block; margin-bottom: 6px; color: #fff; }
     .winner-pill { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; background: rgba(34,197,94,.12); color:#86efac; border:1px solid rgba(34,197,94,.25); border-radius:999px; font-weight:800; margin: 12px 0; }
     .status { margin-top: 12px; color: var(--muted); line-height:1.5; }
     .footer-note { margin-top: 18px; color: var(--muted); font-size: 13px; }
+    @keyframes leftAttack { 0%{transform:translateX(0)} 50%{transform:translateX(26px) scale(1.05)} 100%{transform:translateX(0)} }
+    @keyframes rightAttack { 0%{transform:translateX(0)} 50%{transform:translateX(-26px) scale(1.05)} 100%{transform:translateX(0)} }
+    @keyframes hitShake { 0%{transform:translateX(0)} 25%{transform:translateX(-8px)} 50%{transform:translateX(8px)} 75%{transform:translateX(-5px)} 100%{transform:translateX(0)} }
+    @keyframes damageUp { 0%{opacity:0; transform:translateY(10px)} 20%{opacity:1} 100%{opacity:0; transform:translateY(-34px)} }
     @media (max-width: 1100px) {
       .layout { grid-template-columns: 1fr; }
       .vs-panel { min-height: auto; }
@@ -96,7 +116,7 @@
 <body>
   <div class="wrap">
     <h1>🧠 Brainrot Battle Gene App</h1>
-    <div class="sub">점수 높은 쪽이 우성 유전자. 이름 앞순서, 최종 합체 비중, 메인 캐릭터 표시를 가져가도록 만들었어. 배경제거 PNG를 바로 연결한 로컬 실행용 버전이야.</div>
+    <div class="sub">점수 높은 쪽이 우성 유전자. 이제 HP, 공격, 자동 대결, 승리 판정까지 들어간 버전이야. 이미지는 <b>index.html과 같은 위치의 brainrot_sprites 폴더</b>를 기준으로 불러와.</div>
 
     <div class="layout">
       <div class="panel">
@@ -112,6 +132,10 @@
             <div class="sprite-box"><img id="img1" alt="left fighter"></div>
             <div class="name" id="name1"></div>
             <div class="score" id="score1">0</div>
+            <div class="hp-wrap">
+              <div class="hp-label"><span>HP</span><span id="hpText1">100 / 100</span></div>
+              <div class="hp-bar-bg"><div class="hp-bar" id="hpBar1"></div></div>
+            </div>
             <div class="btn-grid">
               <button class="plus" data-player="1" data-amount="1">+1</button>
               <button class="plus" data-player="1" data-amount="5">+5</button>
@@ -131,7 +155,10 @@
           <div class="top-controls">
             <button class="random" id="randomChars">🎲 Random Match</button>
             <button class="random" id="randomScores">⚡ Random Scores</button>
-            <button class="reset" id="resetAll">↺ Reset Scores</button>
+            <button class="reset" id="resetAll">↺ Reset All</button>
+            <button class="battle-btn" id="attackLeft">⚔️ Left Attack</button>
+            <button class="battle-btn" id="attackRight">⚔️ Right Attack</button>
+            <button class="battle-btn" id="autoBattle">🤖 Auto Battle</button>
             <input id="manual1" type="number" min="0" value="0" style="max-width:120px" />
             <input id="manual2" type="number" min="0" value="0" style="max-width:120px" />
             <button id="applyManual">Apply Scores</button>
@@ -139,16 +166,22 @@
 
           <div class="arena">
             <div class="versus">
-              <div class="vs-card">
+              <div class="vs-card" id="vsCard1">
+                <div class="damage-pop" id="damage1">-10</div>
                 <img id="arena1" alt="arena left">
-                <div class="small" id="arenaName1"></div>
+                <div class="vs-name" id="arenaName1"></div>
+                <div class="turn-chip" id="turnChip1">Ready</div>
               </div>
               <div class="vs-text">VS</div>
-              <div class="vs-card">
+              <div class="vs-card" id="vsCard2">
+                <div class="damage-pop" id="damage2">-10</div>
                 <img id="arena2" alt="arena right">
-                <div class="small" id="arenaName2"></div>
+                <div class="vs-name" id="arenaName2"></div>
+                <div class="turn-chip" id="turnChip2">Ready</div>
               </div>
             </div>
+
+            <div class="battle-log" id="battleLog"><strong>Battle Log</strong><br>공격 버튼을 눌러 대결 시작.</div>
 
             <div class="gene-title">Fusion Result</div>
             <div class="winner-pill" id="winnerPill">Winner: Apple Alien</div>
@@ -175,7 +208,7 @@
             </div>
           </div>
 
-          <div class="footer-note">팁: index.html 과 brainrot_sprites 폴더를 같은 위치에 두고 실행하면 돼. Netlify / GitHub Pages에 올려도 작동 가능.</div>
+          <div class="footer-note">이미지가 안 뜨면: index.html과 <b>brainrot_sprites</b> 폴더를 같은 위치에 두고 실행해. 예) <code>brainrot_sprites/A_Apple_Alien.png</code></div>
         </div>
       </div>
 
@@ -192,6 +225,10 @@
             <div class="sprite-box"><img id="img2" alt="right fighter"></div>
             <div class="name" id="name2"></div>
             <div class="score" id="score2">0</div>
+            <div class="hp-wrap">
+              <div class="hp-label"><span>HP</span><span id="hpText2">100 / 100</span></div>
+              <div class="hp-bar-bg"><div class="hp-bar" id="hpBar2"></div></div>
+            </div>
             <div class="btn-grid">
               <button class="plus" data-player="2" data-amount="1">+1</button>
               <button class="plus" data-player="2" data-amount="5">+5</button>
@@ -206,150 +243,52 @@
 
   <script>
     const characters = [
-  {
-    "id": "A",
-    "name": "Apple Alien",
-    "file": "A_Apple_Alien.png"
-  },
-  {
-    "id": "B",
-    "name": "Banana Beard",
-    "file": "B_Banana_Beard.png"
-  },
-  {
-    "id": "C",
-    "name": "Cookie Clown",
-    "file": "C_Cookie_Clown.png"
-  },
-  {
-    "id": "D",
-    "name": "Donut Dinosaur",
-    "file": "D_Donut_Dinosaur.png"
-  },
-  {
-    "id": "E",
-    "name": "Eggplant Elf",
-    "file": "E_Eggplant_Elf.png"
-  },
-  {
-    "id": "F",
-    "name": "Fluffy Fart",
-    "file": "F_Fluffy_Fart.png"
-  },
-  {
-    "id": "G",
-    "name": "Giggle Ghost",
-    "file": "G_Giggle_Ghost.png"
-  },
-  {
-    "id": "H",
-    "name": "Hamburger Hair",
-    "file": "H_Hamburger_Hair.png"
-  },
-  {
-    "id": "I",
-    "name": "Ice Cream Iguana",
-    "file": "I_Ice_Cream_Iguana.png"
-  },
-  {
-    "id": "J",
-    "name": "Jelly Jellyfish",
-    "file": "J_Jelly_Jellyfish.png"
-  },
-  {
-    "id": "K",
-    "name": "Ketchup King",
-    "file": "K_Ketchup_King.png"
-  },
-  {
-    "id": "L",
-    "name": "Lollipop Lion",
-    "file": "L_Lollipop_Lion.png"
-  },
-  {
-    "id": "M",
-    "name": "Marshmallow Monster",
-    "file": "M_Marshmallow_Monster.png"
-  },
-  {
-    "id": "N",
-    "name": "Noodle Nose",
-    "file": "N_Noodle_Nose.png"
-  },
-  {
-    "id": "O",
-    "name": "Orange Octopus",
-    "file": "O_Orange_Octopus.png"
-  },
-  {
-    "id": "P",
-    "name": "Pizza Pirate",
-    "file": "P_Pizza_Pirate.png"
-  },
-  {
-    "id": "Q",
-    "name": "Quacky Queen",
-    "file": "Q_Quacky_Queen.png"
-  },
-  {
-    "id": "R",
-    "name": "Rainbow Robot",
-    "file": "R_Rainbow_Robot.png"
-  },
-  {
-    "id": "S",
-    "name": "Sausage Snake",
-    "file": "S_Sausage_Snake.png"
-  },
-  {
-    "id": "T",
-    "name": "Toilet Tiger",
-    "file": "T_Toilet_Tiger.png"
-  },
-  {
-    "id": "U",
-    "name": "Underwear Unicorn",
-    "file": "U_Underwear_Unicorn.png"
-  },
-  {
-    "id": "V",
-    "name": "Vampire Vegetable",
-    "file": "V_Vampire_Vegetable.png"
-  },
-  {
-    "id": "W",
-    "name": "Waffle Whale",
-    "file": "W_Waffle_Whale.png"
-  },
-  {
-    "id": "X",
-    "name": "Xray Xylophone",
-    "file": "X_Xray_Xylophone.png"
-  },
-  {
-    "id": "Y",
-    "name": "Yummy Yeti",
-    "file": "Y_Yummy_Yeti.png"
-  },
-  {
-    "id": "Z",
-    "name": "Zany Zombie Zebra",
-    "file": "Z_Zany_Zombie_Zebra.png"
-  }
-];
+      { id: "A", name: "Apple Alien", file: "A_Apple_Alien.png" },
+      { id: "B", name: "Banana Beard", file: "B_Banana_Beard.png" },
+      { id: "C", name: "Cookie Clown", file: "C_Cookie_Clown.png" },
+      { id: "D", name: "Donut Dinosaur", file: "D_Donut_Dinosaur.png" },
+      { id: "E", name: "Eggplant Elf", file: "E_Eggplant_Elf.png" },
+      { id: "F", name: "Fluffy Fart", file: "F_Fluffy_Fart.png" },
+      { id: "G", name: "Giggle Ghost", file: "G_Giggle_Ghost.png" },
+      { id: "H", name: "Hamburger Hair", file: "H_Hamburger_Hair.png" },
+      { id: "I", name: "Ice Cream Iguana", file: "I_Ice_Cream_Iguana.png" },
+      { id: "J", name: "Jelly Jellyfish", file: "J_Jelly_Jellyfish.png" },
+      { id: "K", name: "Ketchup King", file: "K_Ketchup_King.png" },
+      { id: "L", name: "Lollipop Lion", file: "L_Lollipop_Lion.png" },
+      { id: "M", name: "Marshmallow Monster", file: "M_Marshmallow_Monster.png" },
+      { id: "N", name: "Noodle Nose", file: "N_Noodle_Nose.png" },
+      { id: "O", name: "Orange Octopus", file: "O_Orange_Octopus.png" },
+      { id: "P", name: "Pizza Pirate", file: "P_Pizza_Pirate.png" },
+      { id: "Q", name: "Quacky Queen", file: "Q_Quacky_Queen.png" },
+      { id: "R", name: "Rainbow Robot", file: "R_Rainbow_Robot.png" },
+      { id: "S", name: "Sausage Snake", file: "S_Sausage_Snake.png" },
+      { id: "T", name: "Toilet Tiger", file: "T_Toilet_Tiger.png" },
+      { id: "U", name: "Underwear Unicorn", file: "U_Underwear_Unicorn.png" },
+      { id: "V", name: "Vampire Vegetable", file: "V_Vampire_Vegetable.png" },
+      { id: "W", name: "Waffle Whale", file: "W_Waffle_Whale.png" },
+      { id: "X", name: "Xray Xylophone", file: "X_Xray_Xylophone.png" },
+      { id: "Y", name: "Yummy Yeti", file: "Y_Yummy_Yeti.png" },
+      { id: "Z", name: "Zany Zombie Zebra", file: "Z_Zany_Zombie_Zebra.png" },
+    ];
+
     const state = {
       leftIndex: 0,
       rightIndex: 1,
       leftScore: 0,
       rightScore: 0,
+      leftHp: 100,
+      rightHp: 100,
+      busy: false,
+      autoBattleTimer: null,
     };
 
     const $ = (id) => document.getElementById(id);
     const char1 = $('char1');
     const char2 = $('char2');
+    const ASSET_DIR = 'brainrot_sprites';
 
     function filePath(file) {
-      return `brainrot_sprites/${file}`;
+      return `${ASSET_DIR}/${file}`;
     }
 
     function fillSelects() {
@@ -365,11 +304,16 @@
     function setCharacter(side, index) {
       if (side === 'left') state.leftIndex = Number(index);
       else state.rightIndex = Number(index);
+      resetBattle(false);
       render();
     }
 
     function clampScore(n) {
       return Math.max(0, Math.floor(Number(n) || 0));
+    }
+
+    function clampHp(n) {
+      return Math.max(0, Math.min(100, Math.floor(Number(n) || 0)));
     }
 
     function changeScore(player, amount) {
@@ -408,14 +352,110 @@
 
     function setOverlayMix(overlayEl, winnerSide, winPct) {
       let clip = 'inset(0 0 0 0)';
-      if (winPct < 60) {
-        clip = winnerSide === 'left' ? 'inset(0 45% 0 0)' : 'inset(0 0 0 45%)';
-      } else if (winPct < 75) {
-        clip = winnerSide === 'left' ? 'inset(0 25% 0 0)' : 'inset(0 0 0 25%)';
-      } else {
-        clip = 'inset(0 0 0 0)';
-      }
+      if (winPct < 60) clip = winnerSide === 'left' ? 'inset(0 45% 0 0)' : 'inset(0 0 0 45%)';
+      else if (winPct < 75) clip = winnerSide === 'left' ? 'inset(0 25% 0 0)' : 'inset(0 0 0 25%)';
       overlayEl.style.clipPath = clip;
+    }
+
+    function updateHpUI() {
+      $('hpBar1').style.width = `${state.leftHp}%`;
+      $('hpBar2').style.width = `${state.rightHp}%`;
+      $('hpText1').textContent = `${state.leftHp} / 100`;
+      $('hpText2').textContent = `${state.rightHp} / 100`;
+      $('turnChip1').textContent = state.leftHp <= 0 ? 'KO' : 'Ready';
+      $('turnChip2').textContent = state.rightHp <= 0 ? 'KO' : 'Ready';
+    }
+
+    function setBattleLog(message) {
+      $('battleLog').innerHTML = `<strong>Battle Log</strong><br>${message}`;
+    }
+
+    function calcDamage(attackerScore, defenderScore) {
+      const diff = attackerScore - defenderScore;
+      let damage = 10 + Math.floor(Math.abs(diff) / 10);
+      if (diff > 0) damage += 4;
+      if (attackerScore >= 75) damage += 4;
+      return Math.max(8, Math.min(30, damage));
+    }
+
+    function checkGameOver() {
+      const left = characters[state.leftIndex];
+      const right = characters[state.rightIndex];
+      if (state.leftHp <= 0 || state.rightHp <= 0) {
+        const winner = state.leftHp > 0 ? left.name : right.name;
+        setBattleLog(`🏆 ${winner} 승리! HP가 0이 되어 대결 종료.`);
+        $('turnChip1').textContent = state.leftHp > 0 ? 'WIN' : 'KO';
+        $('turnChip2').textContent = state.rightHp > 0 ? 'WIN' : 'KO';
+        if (state.autoBattleTimer) {
+          clearInterval(state.autoBattleTimer);
+          state.autoBattleTimer = null;
+          $('autoBattle').textContent = '🤖 Auto Battle';
+        }
+        return true;
+      }
+      return false;
+    }
+
+    async function attack(side) {
+      if (state.busy) return;
+      if (checkGameOver()) return;
+
+      const left = characters[state.leftIndex];
+      const right = characters[state.rightIndex];
+      const isLeft = side === 'left';
+      const attacker = isLeft ? left : right;
+      const defender = isLeft ? right : left;
+      const atkScore = isLeft ? state.leftScore : state.rightScore;
+      const defScore = isLeft ? state.rightScore : state.leftScore;
+      const damage = calcDamage(atkScore, defScore);
+
+      state.busy = true;
+      const atkCard = $(isLeft ? 'vsCard1' : 'vsCard2');
+      const defCard = $(isLeft ? 'vsCard2' : 'vsCard1');
+      const damageEl = $(isLeft ? 'damage2' : 'damage1');
+      const turnSelf = $(isLeft ? 'turnChip1' : 'turnChip2');
+      const turnEnemy = $(isLeft ? 'turnChip2' : 'turnChip1');
+
+      turnSelf.textContent = 'ATTACK';
+      turnEnemy.textContent = 'DEFEND';
+      atkCard.classList.add(isLeft ? 'left-attack' : 'right-attack');
+      setBattleLog(`⚔️ ${attacker.name} → ${defender.name} 공격! 예상 데미지 ${damage}`);
+
+      await new Promise(r => setTimeout(r, 280));
+      defCard.classList.add('hit');
+      damageEl.textContent = `-${damage}`;
+      damageEl.classList.remove('show');
+      void damageEl.offsetWidth;
+      damageEl.classList.add('show');
+
+      if (isLeft) state.rightHp = clampHp(state.rightHp - damage);
+      else state.leftHp = clampHp(state.leftHp - damage);
+      updateHpUI();
+      render();
+
+      await new Promise(r => setTimeout(r, 520));
+      atkCard.classList.remove('left-attack', 'right-attack');
+      defCard.classList.remove('hit');
+      turnSelf.textContent = 'Ready';
+      turnEnemy.textContent = (isLeft ? state.rightHp : state.leftHp) <= 0 ? 'KO' : 'Ready';
+      state.busy = false;
+      checkGameOver();
+    }
+
+    function resetBattle(alsoScores = true) {
+      state.leftHp = 100;
+      state.rightHp = 100;
+      if (alsoScores) {
+        state.leftScore = 0;
+        state.rightScore = 0;
+      }
+      if (state.autoBattleTimer) {
+        clearInterval(state.autoBattleTimer);
+        state.autoBattleTimer = null;
+        $('autoBattle').textContent = '🤖 Auto Battle';
+      }
+      setBattleLog('공격 버튼을 눌러 대결 시작.');
+      updateHpUI();
     }
 
     function render() {
@@ -446,7 +486,6 @@
         : `Winner: ${result.winner.name}`;
 
       $('fusionName').textContent = fusionNameText(result.winner, result.loser);
-
       $('geneLeft').style.width = `${perc.left}%`;
       $('geneRight').style.width = `${perc.right}%`;
       $('geneLeft').textContent = `${left.name} ${perc.left}%`;
@@ -467,8 +506,11 @@
       $('statusText').innerHTML = `
         <strong>${left.name}</strong> vs <strong>${right.name}</strong><br>
         점수: ${state.leftScore} : ${state.rightScore}<br>
+        HP: ${state.leftHp} : ${state.rightHp}<br>
         최종 이름: <strong>${fusionNameText(result.winner, result.loser)}</strong>
       `;
+
+      updateHpUI();
     }
 
     function randomIndex(exclude) {
@@ -478,6 +520,7 @@
     }
 
     fillSelects();
+    resetBattle();
     render();
 
     char1.addEventListener('change', (e) => setCharacter('left', e.target.value));
@@ -487,21 +530,51 @@
       btn.addEventListener('click', () => changeScore(Number(btn.dataset.player), Number(btn.dataset.amount)));
     });
 
-    $('resetAll').addEventListener('click', () => { state.leftScore = 0; state.rightScore = 0; render(); });
+    $('resetAll').addEventListener('click', () => { resetBattle(true); render(); });
     $('randomScores').addEventListener('click', () => {
       state.leftScore = Math.floor(Math.random() * 101);
       state.rightScore = Math.floor(Math.random() * 101);
+      resetBattle(false);
       render();
     });
     $('randomChars').addEventListener('click', () => {
       state.leftIndex = randomIndex(-1);
       state.rightIndex = randomIndex(state.leftIndex);
+      resetBattle(false);
       render();
     });
     $('applyManual').addEventListener('click', () => {
       state.leftScore = clampScore($('manual1').value);
       state.rightScore = clampScore($('manual2').value);
+      resetBattle(false);
       render();
+    });
+
+    $('attackLeft').addEventListener('click', () => attack('left'));
+    $('attackRight').addEventListener('click', () => attack('right'));
+    $('autoBattle').addEventListener('click', () => {
+      if (state.autoBattleTimer) {
+        clearInterval(state.autoBattleTimer);
+        state.autoBattleTimer = null;
+        $('autoBattle').textContent = '🤖 Auto Battle';
+        setBattleLog('자동 대결 중지.');
+        return;
+      }
+      if (checkGameOver()) return;
+      $('autoBattle').textContent = '⏹ Stop Auto';
+      setBattleLog('🤖 자동 대결 시작. 점수 높은 쪽이 더 강하게 때림.');
+      state.autoBattleTimer = setInterval(() => {
+        if (state.busy || checkGameOver()) return;
+        const next = state.leftScore >= state.rightScore ? 'left' : 'right';
+        attack(next);
+      }, 900);
+    });
+
+    ['img1','img2','arena1','arena2','fusionBase','fusionOverlay'].forEach(id => {
+      $(id).addEventListener('error', (e) => {
+        e.target.alt = '이미지 경로 확인';
+        setBattleLog('이미지가 안 뜨면 index.html 옆에 brainrot_sprites 폴더가 있는지 확인해.');
+      });
     });
   </script>
 </body>
